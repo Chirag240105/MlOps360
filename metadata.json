@@ -1,0 +1,6 @@
+{
+  "name": "ModelOps360",
+  "description": "Intelligent ML Model Monitoring, Drift Detection, and Automated Retraining Platform for Retail Demand Forecasting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
