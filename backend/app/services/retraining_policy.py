@@ -80,6 +80,6 @@ def evaluate_challenger_gate(
 ) -> tuple[bool, float]:
     """Return (passed, relative_improvement) comparing Challenger against Production Champion."""
     if champion_rmse <= 0:
-        return True, 0.0
+        return False, 0.0
     rel = (champion_rmse - challenger_rmse) / champion_rmse
     return rel >= min_relative_improvement, round(rel, 4)

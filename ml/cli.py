@@ -9,6 +9,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from ml.data.retail_generator import compute_sha256, generate_retail_dataset_csv
 from ml.monitoring.drift_engine import evaluate_monitoring_window
+from ml.monitoring.retraining_assessment import run_retraining_assessment
 from ml.training.baselines import evaluate_baselines
 from ml.training.trainer import load_verified_artifact, predict_with_artifact, run_training_pipeline
 from ml.validation.validator import validate_and_profile_csv
@@ -51,6 +52,24 @@ def main() -> None:
     mon_p.add_argument("--psi-threshold", type=float, default=0.20)
     mon_p.add_argument("--ks-pvalue-threshold", type=float, default=0.05)
     mon_p.add_argument("--rmse-degradation-factor", type=float, default=1.25)
+
+    assessment_p = subparsers.add_parser(
+        "retraining-assessment",
+        help="Evaluate a champion on new data and train a gated challenger",
+    )
+    assessment_p.add_argument("--historical", required=True, help="Previously used labeled training CSV")
+    assessment_p.add_argument("--new-data", required=True, help="New labeled incoming CSV")
+    assessment_p.add_argument("--champion-artifact", required=True)
+    assessment_p.add_argument("--champion-sha256", required=True)
+    assessment_p.add_argument("--artifact-dir", required=True)
+    assessment_p.add_argument("--run-id", default="assessment_candidate")
+    assessment_p.add_argument(
+        "--algorithm",
+        choices=["auto", "ridge", "random_forest", "gradient_boosting"],
+        default="auto",
+    )
+    assessment_p.add_argument("--seed", type=int, default=42)
+    assessment_p.add_argument("--min-relative-improvement", type=float, default=0.02)
 
     args = parser.parse_args()
 
@@ -120,6 +139,19 @@ def main() -> None:
             psi_threshold=args.psi_threshold,
             ks_pvalue_threshold=args.ks_pvalue_threshold,
             rmse_degradation_factor=args.rmse_degradation_factor,
+        )
+        print(json.dumps(report))
+    elif args.command == "retraining-assessment":
+        report = run_retraining_assessment(
+            historical_csv=Path(args.historical).read_text(encoding="utf-8"),
+            incoming_csv=Path(args.new_data).read_text(encoding="utf-8"),
+            champion_artifact_path=args.champion_artifact,
+            champion_sha256=args.champion_sha256,
+            artifact_dir=args.artifact_dir,
+            run_id=args.run_id,
+            algorithm=args.algorithm,
+            seed=args.seed,
+            min_relative_improvement=args.min_relative_improvement,
         )
         print(json.dumps(report))
 

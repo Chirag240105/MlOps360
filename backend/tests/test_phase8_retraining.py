@@ -55,6 +55,10 @@ class TestPhase8RetrainingPolicy(unittest.TestCase):
         self.assertFalse(failed)
         self.assertLess(rel_bad, 0.02)
 
+        zero_baseline, zero_rel = evaluate_challenger_gate(champion_rmse=0.0, challenger_rmse=1.0)
+        self.assertFalse(zero_baseline)
+        self.assertEqual(zero_rel, 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()
