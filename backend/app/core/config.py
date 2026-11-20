@@ -33,9 +33,17 @@ class Settings(BaseSettings):
     allowed_origins_raw: str = Field(default="http://localhost:3000", alias="ALLOWED_ORIGINS")
 
     # PostgreSQL & Artifact Storage
-    database_url: str = Field(
-        default="postgresql+psycopg://modelops:CHANGE_ME@localhost:5432/modelops360"
+    database_url_raw: str = Field(
+        default="postgresql+psycopg://modelops:CHANGE_ME@localhost:5432/modelops360",
+        alias="DATABASE_URL",
     )
+
+    @property
+    def database_url(self) -> str:
+        url = self.database_url_raw
+        if url.startswith("postgresql://"):
+            return "postgresql+psycopg://" + url[len("postgresql://"):]
+        return url
     mlflow_tracking_uri: str = Field(default="http://localhost:5000")
     mlflow_experiment_name: str = Field(default="retail-demand-forecasting")
     artifact_storage_path: str = Field(default="./artifacts")

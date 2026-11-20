@@ -16,7 +16,7 @@ services:
       - PORT=3000
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - JWT_SECRET=${JWT_SECRET:-CHANGE_ME_LOCAL_DEV_ONLY_MIN_32_CHARS}
-      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-modelops}:${POSTGRES_PASSWORD:-modelops_secret}@postgres:5432/${POSTGRES_DB:-modelops360}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-modelops}:${POSTGRES_PASSWORD:-modelops_secret}@postgres:5432/${POSTGRES_DB:-modelops360}}
       - LOCAL_SQLITE_PATH=/app/data/modelops360.db
       - ARTIFACT_STORAGE_PATH=/app/artifacts
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -60,7 +60,7 @@ services:
       - APP_ENV=production
       - PORT=8000
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-modelops}:${POSTGRES_PASSWORD:-modelops_secret}@postgres:5432/${POSTGRES_DB:-modelops360}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-modelops}:${POSTGRES_PASSWORD:-modelops_secret}@postgres:5432/${POSTGRES_DB:-modelops360}}
       - ARTIFACT_STORAGE_PATH=/app/artifacts
       - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME:-retail-demand-forecasting}
