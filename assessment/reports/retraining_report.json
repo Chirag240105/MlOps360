@@ -1,0 +1,47 @@
+{
+  "retrainedAt": "2026-11-20T10:26:27.139333+00:00",
+  "algorithm": "gradient_boosting",
+  "combinedRows": 1800,
+  "artifactPath": "C:\\Users\\chirag pandey\\Documents\\Projects\\MlOps360\\assessment\\models\\candidate_model.model.json",
+  "artifactSha256": "0d6410e04c6ff71fc5d0539fe857b240127c752504f94f7c073f5eafc3006756",
+  "splitSummary": {
+    "strategy": "chronological_date_split",
+    "trainRows": 1248,
+    "valRows": 264,
+    "testRows": 276,
+    "trainDateRange": {
+      "start": "2026-01-02",
+      "end": "2026-04-15"
+    },
+    "valDateRange": {
+      "start": "2026-04-16",
+      "end": "2026-05-07"
+    },
+    "testDateRange": {
+      "start": "2026-05-08",
+      "end": "2026-05-30"
+    }
+  },
+  "validationMetrics": {
+    "samples": 264,
+    "mae": 8.0815,
+    "rmse": 13.2799,
+    "mapePct": 17.28,
+    "smapePct": 17.85,
+    "r2": 0.7241,
+    "zeroActualCount": 4
+  },
+  "testMetrics": {
+    "samples": 276,
+    "mae": 15.883,
+    "rmse": 20.7663,
+    "mapePct": 40.13,
+    "smapePct": 35.42,
+    "r2": 0.5558,
+    "zeroActualCount": 6
+  },
+  "mlflowTracking": {
+    "status": "unavailable",
+    "reason": "The mlflow package is not installed"
+  }
+}

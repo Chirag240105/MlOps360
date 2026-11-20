@@ -1,0 +1,33 @@
+{
+  "evaluatedAt": "2026-11-20T10:26:27.190237+00:00",
+  "selectedMetric": "RMSE",
+  "metricJustification": "Metric Selected: RMSE (Root Mean Squared Error). Justification: In retail inventory demand forecasting, large forecast errors result in catastrophic business costs \u2014 under-forecasting leads to lost sales and customer churn (stockouts), while over-forecasting incurs high working capital depreciation and perishable waste. RMSE squares individual residuals before averaging, penalizing large discrepancies much more heavily than MAE. A candidate must achieve at least a 2.0% reduction in RMSE to justify model transition risk.",
+  "evaluationWindow": {
+    "start": "2026-05-08",
+    "end": "2026-05-30",
+    "samples": 276
+  },
+  "champion": {
+    "model": "champion_model",
+    "algorithm": "ridge",
+    "rmse": 22.1023,
+    "mae": 18.0068,
+    "r2": 0.4968
+  },
+  "candidate": {
+    "model": "candidate_model",
+    "algorithm": "gradient_boosting",
+    "rmse": 20.5031,
+    "mae": 15.7536,
+    "r2": 0.567
+  },
+  "gatePolicy": {
+    "rule": "relative_rmse_improvement >= min_threshold",
+    "thresholdPct": 2.0,
+    "measuredImprovementPct": 7.24,
+    "passed": true
+  },
+  "decision": "ELIGIBLE_FOR_PROMOTION",
+  "championUpdated": false,
+  "governanceRule": "Never overwrite champion automatically without recorded audit trail."
+}

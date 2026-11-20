@@ -1,0 +1,16 @@
+{
+  "evaluatedAt": "2026-11-20T10:26:22.171893+00:00",
+  "modelRole": "Champion",
+  "algorithm": "ridge",
+  "artifactSha256": "c090c8a7f6b02db314ae0e4801e7c6551b605dc66d4f50a4e32fa131ebdba322",
+  "sampleCount": 360,
+  "metrics": {
+    "mae": 18.3542,
+    "rmse": 22.299,
+    "r2": 0.4844,
+    "mapePct": 46.43,
+    "smapePct": 39.37
+  },
+  "targetMean": 48.2111,
+  "predictionMean": 65.1685
+}

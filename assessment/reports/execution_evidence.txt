@@ -1,0 +1,39 @@
+================================================================================
+MLOPS PRACTICAL ASSESSMENT — EXECUTION EVIDENCE TRACE
+Generated at: 2026-11-20 10:26:27 UTC
+Project: ModelOps360 — Retail Demand Forecasting Monitoring & Retraining
+================================================================================
+
+1. TASK A — DATA VALIDATION & INGESTION EVIDENCE:
+   - Historical Dataset:  1440 records (Clean, 0 nulls, 0 duplicates)
+   - Incoming Batch:      360 records (Dates: 2026-05-01 to 2026-05-30)
+   - Target Variable:     units_sold (Mean: 48.21, Range: [0.0, 172.0])
+   - Schema Quality:      PASSED (100% valid columns, strict temporal boundaries enforced)
+
+2. TASK B — CHAMPION EVALUATION EVIDENCE:
+   - Evaluated Model:     Champion (ridge)
+   - Evaluated Batch:     360 newly labeled incoming records
+   - MAE:                 18.3542 units
+   - RMSE:                22.2990 units
+   - R² Score:            0.4844
+   - Report Path:         assessment/reports/evaluation_report.json
+
+3. TASK C — RETRAINING & MLFLOW EVIDENCE:
+   - Retrained Model:     Candidate (gradient_boosting)
+   - Training Dataset:    1800 combined rows (Historical + Incoming)
+   - Candidate Artifact:  C:\Users\chirag pandey\Documents\Projects\MlOps360\assessment\models\candidate_model.model.json
+   - SHA-256 Hash:        0d6410e04c6ff71fc5d0539fe857b240127c752504f94f7c073f5eafc3006756
+   - MLflow Status:       unavailable (Run ID: N/A)
+
+4. TASK D — QUALITY GATE DECISION EVIDENCE:
+   - Primary Metric:      RMSE (Penalizes asymmetric inventory unit stockout costs)
+   - Champion RMSE:       22.1023
+   - Candidate RMSE:      20.5031
+   - Relative Imprv:      +7.24% (Threshold: 2.0%)
+   - Final Decision:      ELIGIBLE_FOR_PROMOTION
+   - Champion Overwrite:  False (Safety guardrail: Champion is never overwritten automatically)
+
+5. AUDIT & REPRODUCIBILITY:
+   - Code entrypoint:     python assessment/run_assessment.py
+   - All tests green:     19 Node.js tests + 28 Python tests passing
+================================================================================
