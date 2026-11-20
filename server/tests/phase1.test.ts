@@ -26,6 +26,9 @@ async function withServer(run: (baseUrl: string) => Promise<void>): Promise<void
     await run(baseUrl);
   } finally {
     await new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+    // Windows: explicitly close SQLite connection so WAL/SHM file handles are released
+    app.close();
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
 }

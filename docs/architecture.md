@@ -1,32 +1,71 @@
-# ModelOps360 System Architecture
+# ModelOps360 Architecture Specification
 
-## 1. Overall System Architecture (Mermaid Diagram #1)
+## 1. System Overview
+
+**ModelOps360** is a lightweight, modular, intelligent MLOps platform for retail demand forecasting. It unifies the entire machine learning lifecycle—from data validation and training to continuous drift monitoring, closed-loop automated retraining, and atomic rollback—**without requiring heavyweight orchestration clusters like Apache Airflow**.
 
 ```mermaid
-flowchart LR
-    UI["React + TypeScript Dashboard"] -->|HTTPS / JWT| CP["Control Plane API\n(Express TS / FastAPI)"]
-    CLIENT["Retail Forecasting Clients"] -->|POST /predict| SRV["Model Serving Plane\n(Pointer-Based Inference API)"]
+graph TD
+    subgraph UI ["Frontend Presentation Tier"]
+        Dashboard["React 19 Dashboard<br/>• Real-time monitoring metrics<br/>• Model comparison charts<br/>• Drift alerts & audit timeline"]
+    end
 
-    CP --> DB[("Relational Metadata DB\n(PostgreSQL / SQLite)")]
-    CP --> MLF["MLflow Tracking &\nModel Registry"]
-    CP --> ORCH["Workflow Orchestrator\n(Airflow / Background Worker)"]
+    subgraph API ["Application & Control Plane"]
+        Express["Workspace Control Plane (Express 4.21)<br/>• Port 3000<br/>• Subprocess CLI workers<br/>• SQLite WAL ledger"]
+        FastAPI["Production API Service (FastAPI 0.115)<br/>• Port 8000<br/>• Model Serving & Batch Prediction<br/>• Retraining Policy Engine"]
+    end
 
-    ORCH --> VAL["Data Quality Gates"]
-    VAL --> TRN["Time-Aware Training Pipeline"]
-    TRN --> MLF
-    TRN --> STORE[("Artifact & Dataset Store\n(S3 / DVC / Local)")]
+    subgraph JobLayer ["Lightweight Job & Scheduling Engine"]
+        JobMgr["LightweightJobManager<br/>• Thread-safe ThreadPoolExecutor<br/>• State Machine: QUEUED -> RUNNING -> SUCCEEDED / REJECTED<br/>• Idempotency Deduplication<br/>• Active Job Locks"]
+        Scheduler["InProcessScheduler<br/>• Periodic telemetry window sampling<br/>• Automated drift checks<br/>• Event-driven retraining dispatch"]
+    end
 
-    SRV -->|Resolve Active Production Pointer\nVerify SHA-256 Checksum| MLF
-    SRV -->|Persist Request ID, Inputs, Prediction| DB
+    subgraph MLEngine ["Pure Python ML Core"]
+        Validator["Data Validator (6 Pre-Training Gates)"]
+        Trainer["Training Pipeline (Chronological 70/15/15 Split + GBDT/Ridge)"]
+        Tracker["MLflow Tracking Client (Params, Metrics, Artifacts)"]
+        DriftEngine["Statistical Drift Engine (PSI + Two-Sample KS)"]
+        Registry["Governed Registry (6 Stages: Dev -> Cand -> Stag -> Prod -> Arch -> Rej)"]
+    end
 
-    ORCH -->|Reference vs. Production Window| DB
-    ORCH -->|Drift & Ground-Truth Eval| DB
-    ORCH -->|Policy Gate + Cooldown Check| TRN
+    subgraph Storage ["Persistent Storage Tier"]
+        DB[("Relational Metadata DB<br/>PostgreSQL / SQLite WAL")]
+        Artifacts[("Artifact Storage<br/>safe_json_v1 Models + SHA-256 Digests")]
+        MLflowStore[("MLflow Tracking Server<br/>Port 5000")]
+    end
+
+    Dashboard -->|REST / JSON| Express
+    Dashboard -->|REST / JSON| FastAPI
+    FastAPI --> JobMgr
+    Scheduler --> JobMgr
+    JobMgr --> Validator --> Trainer --> Tracker --> Registry
+    Scheduler --> DriftEngine
+    Trainer -->|Save safe_json_v1| Artifacts
+    Tracker -->|Log Metrics| MLflowStore
+    Registry -->|ACID Pointer Update| Artifacts
+    JobMgr -->|Audit Logging| DB
 ```
 
-### Engineering Explanation
+---
 
-1. **Control Plane vs. Serving Plane Isolation:** Governance APIs (dataset uploads, model promotion, rollback, audit queries) never share execution bottlenecks with low-latency `/predict` traffic.
-2. **Dynamic Production Pointer:** The serving layer resolves the currently approved `Production` model dynamically from metadata rather than hardcoding an artifact filename.
-3. **Traceable Lineage:** Every `model_version` links back to an immutable `dataset_version` checksum, `mlflow_run_id`, training configuration, and Git commit SHA.
-4. **Governance Before Promotion:** Registering a model places it in `Development` or `Candidate`. Only validated Challenger-vs-Champion gates or authorized operators promote a model to `Production`.
+## 2. Core Architectural Decisions
+
+### A. Removal of Heavyweight Orchestrators
+Previous versions utilized Apache Airflow 2.10. While functional, Airflow required 5 Docker containers, added over 3.5 GB of RAM overhead, lacked native Windows support, and introduced a 30-second scheduling loop. 
+
+ModelOps360 replaced this with `LightweightJobManager` and `InProcessScheduler`:
+- **Direct in-process asynchronous dispatch** using standard Python `ThreadPoolExecutor`.
+- **Zero latency**: Retraining triggers immediately when drift is detected.
+- **Cross-platform**: Runs identically on Windows, Linux, and macOS without containers.
+
+### B. Lightweight XCom Alternative (Filesystem Pointer System)
+To avoid storing bulky blobs in relational tables:
+- Model artifacts are serialized into canonical `safe_json_v1` JSON files and stored on disk.
+- Each model is identified by a SHA-256 digest.
+- Active production model is resolved atomically via `production_pointer.json`.
+
+### C. Retraining Guardrail Engine
+Automated retraining is protected by three essential guardrails:
+1. **Active Job Lock**: Only one job per model can run at any time.
+2. **24-hour Cooldown**: Prevents thrashing and redundant compute expenses.
+3. **3-strike Circuit Breaker**: Suppresses automated retraining if 3 consecutive runs fail.

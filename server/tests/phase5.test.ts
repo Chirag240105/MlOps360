@@ -31,6 +31,8 @@ async function withServer(
     await run(baseUrl);
   } finally {
     await new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
+    app.close();
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
     fs.rmSync(tmpDir, {recursive: true, force: true});
   }
 }

@@ -13,6 +13,9 @@
 [![Scikit--Learn](https://img.shields.io/badge/Scikit--Learn-1.6+-F7931E.svg?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL--Mode-003B57.svg?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-4169E1.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose_Ready-2496ED.svg?logo=docker&logoColor=white)](docker-compose.yml)
+[![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF.svg?logo=github-actions&logoColor=white)](.github/workflows/ci.yml)
+[![Job Engine](https://img.shields.io/badge/Job_Engine-In--Process_Async-blue.svg)](docs/BACKGROUND_JOBS.md)
 [![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 
 ---
@@ -563,6 +566,7 @@ sequenceDiagram
 | **Database (Dev / Local)** | Node.js Built-in SQLite | `node:sqlite` (WAL Mode) | Zero-dependency local relational persistence with foreign keys enabled and Write-Ahead Logging for concurrent API operations. |
 | **Database (Prod Target)** | PostgreSQL / SQLAlchemy / Alembic | `PG 16+`, `SQLAlchemy 2.0`, `Alembic 1.14` | ACID transactional storage supporting multi-master constraints, unique idempotency keys, and enterprise audit ledgers. |
 | **Drift Monitoring** | Custom Statistical Engine & Evidently AI | `Evidently 0.5.1` + Custom Engine | Implements Jeffreys-smoothed Population Stability Index (PSI) and asymptotic Two-Sample Kolmogorov-Smirnov (KS) tests. |
+| **Job Engine & Scheduler** | Lightweight Job Manager & In-Process Scheduler | Python `ThreadPoolExecutor` + Timer Daemon | Zero-container asynchronous job executor coordinating automated dataset ingestion, 6-gate validation, model retraining, MLflow logging, champion-challenger comparison, and atomic promotion with idempotency and cooldown guardrails. |
 | **Security & Cryptography** | `node:crypto` / `scrypt` / PyJWT | Native `scrypt`, `HS256` | Salted, memory-hard `scrypt` password hashing, constant-time equality checks, stateless JWT authentication, and RBAC authorization. |
 | **Bundler & Build Tool** | Vite / TSX | `Vite 8.3`, `TSX 4.21` | Sub-second Hot Module Replacement (HMR) for the React frontend and direct TypeScript execution for the Express control plane. |
 
@@ -1494,46 +1498,37 @@ Displays 6 live KPI cards (`Registered Models`, `Active Production`, `Experiment
 
 ModelOps360 supports dual-track deployment: local containerized environments and enterprise cloud infrastructure on Amazon Web Services (AWS).
 
-### Local Container Deployment (Docker Compose Target)
+### Production Container Deployment (Docker Compose)
 
-The platform is designed to run in Docker Compose with the following service topology:
+> Full architectural reference and CI/CD guide: [docs/DOCKER_AND_CICD.md](docs/DOCKER_AND_CICD.md)
 
-```yaml
-# Conceptual Docker Compose Topology (Target Track B)
-services:
-  # 1. Reverse Proxy & Frontend Control Plane
-  control-plane:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      - APP_ENV=production
-      - DATABASE_URL=postgresql+psycopg://modelops:secure_pass@postgres:5432/modelops360
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    depends_on:
-      - postgres
-      - mlflow
+ModelOps360 is fully containerized with a production-ready 4-service topology:
 
-  # 2. Metadata Database
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: modelops
-      POSTGRES_PASSWORD: secure_pass
-      POSTGRES_DB: modelops360
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+```bash
+# Start all 4 services (App, FastAPI Backend, MLflow, PostgreSQL) in background
+docker-compose up -d --build
 
-  # 3. MLflow Tracking Server
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.19.0
-    command: mlflow server --backend-store-uri postgresql://modelops:secure_pass@postgres:5432/modelops360 --default-artifact-root /artifacts --host 0.0.0.0
-    volumes:
-      - artifact_data:/artifacts
-    depends_on:
-      - postgres
+# Inspect health status
+docker-compose ps
 
-volumes:
+# Access interfaces:
+# - Web Dashboard & Control Plane: http://localhost:3000
+# - FastAPI ML & Inference Docs:   http://localhost:8000/docs
+# - MLflow Tracking UI:            http://localhost:5000
+```
+
+The stack coordinates:
+1. **`app` (`modelops360-app`)**: Multi-stage Node.js 22 + Python 3.11 container hosting React 19 UI and Express control plane.
+2. **`backend` (`modelops360-backend`)**: Python 3.11 FastAPI microservice providing direct inference and in-process job scheduling.
+3. **`mlflow` (`modelops360-mlflow`)**: Experiment tracking server with SQLite/Postgres backend and shared artifact storage.
+4. **`postgres` (`modelops360-postgres`)**: PostgreSQL 16 database for relational metadata and governance records.
+
+### Automated CI/CD Pipeline (GitHub Actions)
+
+ModelOps360 includes three automated GitHub Actions workflows under `.github/workflows/`:
+- **`ci.yml`**: Runs on push/PR to `main`/`develop` — executes TypeScript typechecking (`tsc --noEmit`), Node server test suite (19 phases), Python test suite (28 pytest tests), Vite production build, and Dockerfile/Compose smoke tests.
+- **`cd.yml`**: Runs on push to `main` or semantic tags (`v*.*.*`) — builds and publishes multi-platform container images to the GitHub Container Registry (`ghcr.io`).
+- **`security.yml`**: Scans for known vulnerabilities via `npm audit` and `pip-audit`.
   pgdata:
   artifact_data:
 ```

@@ -1,0 +1,28 @@
+# Development override for live reloading and local mounting
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./server:/app/server
+      - ./src:/app/src
+      - ./ml:/app/ml
+      - ./data:/app/data
+      - ./artifacts:/app/artifacts
+    command: ["npx", "tsx", "server.ts"]
+
+  backend:
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./backend:/app/backend
+      - ./ml:/app/ml
+      - ./artifacts:/app/artifacts
+    command: ["python", "-m", "uvicorn", "backend.app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]

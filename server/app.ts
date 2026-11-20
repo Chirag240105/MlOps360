@@ -33,9 +33,19 @@ export interface AppDependencies {
   rateLimitMaxRequests?: number;
 }
 
-export function createApiApp(deps: AppDependencies = {}): express.Express {
-  const app = express();
+// Extended Express app that exposes a close() to release the SQLite connection.
+// Tests call app.close() in their finally block before fs.rmSync to avoid
+// Windows EBUSY on WAL/SHM files that SQLite holds open.
+export interface ApiApp extends express.Express {
+  close(): void;
+}
+
+export function createApiApp(deps: AppDependencies = {}): ApiApp {
+  const app = express() as ApiApp;
   const db = openDatabase(deps.dbPath ?? config.localSqlitePath);
+  app.close = () => {
+    try { db.close(); } catch { /* already closed */ }
+  };
   const artifactRoot = deps.artifactRoot ?? config.artifactStoragePath;
   const enforceAuth = deps.enforceAuth ?? config.enforceAuth;
   const rateLimitMax = deps.rateLimitMaxRequests ?? config.rateLimitMaxRequests;

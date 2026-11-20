@@ -1,7 +1,7 @@
 import sys
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request
-from app.core.config import get_settings
+from ...core.config import get_settings
 
 router = APIRouter(tags=["system"])
 

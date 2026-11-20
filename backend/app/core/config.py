@@ -1,7 +1,14 @@
 from functools import lru_cache
 from typing import List
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+try:
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+except ImportError:
+    from pydantic import BaseModel as BaseSettings
+
+    def SettingsConfigDict(**kwargs):
+        return kwargs
 
 
 class Settings(BaseSettings):

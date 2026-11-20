@@ -4,10 +4,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.api.routes.health import router as health_router
-from app.core.config import get_settings
-from app.core.exceptions import ModelOpsError
-from app.core.logging import configure_logging
+from .api.routes.health import router as health_router
+from .api.routes.models import router as models_router
+from .api.routes.training import router as training_router
+from .core.config import get_settings
+from .core.exceptions import ModelOpsError
+from .core.logging import configure_logging
 
 settings = get_settings()
 logger = configure_logging(level=settings.log_level, service_name=settings.app_name)
@@ -76,6 +78,8 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(health_router)
+    app.include_router(models_router)
+    app.include_router(training_router)
     return app
 
 

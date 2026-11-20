@@ -1,0 +1,156 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. ModelOps360 Full-Stack Web App (Control Plane & React UI)
+  # ----------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: modelops360-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - APP_ENV=production
+      - PORT=3000
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - JWT_SECRET=${JWT_SECRET:-CHANGE_ME_LOCAL_DEV_ONLY_MIN_32_CHARS}
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-modelops}:${POSTGRES_PASSWORD:-modelops_secret}@postgres:5432/${POSTGRES_DB:-modelops360}
+      - LOCAL_SQLITE_PATH=/app/data/modelops360.db
+      - ARTIFACT_STORAGE_PATH=/app/artifacts
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME:-retail-demand-forecasting}
+      - DRIFT_PSI_THRESHOLD=${DRIFT_PSI_THRESHOLD:-0.20}
+      - DRIFT_KS_PVALUE_THRESHOLD=${DRIFT_KS_PVALUE_THRESHOLD:-0.05}
+      - RETRAINING_COOLDOWN_HOURS=${RETRAINING_COOLDOWN_HOURS:-24}
+      - MIN_PROMOTION_RMSE_IMPROVEMENT=${MIN_PROMOTION_RMSE_IMPROVEMENT:-0.02}
+      - PYTHON_EXECUTABLE=/usr/bin/python3
+    volumes:
+      - modelops_data:/app/data
+      - modelops_artifacts:/app/artifacts
+    depends_on:
+      backend:
+        condition: service_started
+      mlflow:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - modelops360-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ----------------------------------------------------------------------------
+  # 2. ModelOps360 Python FastAPI ML Microservice (Inference & Job Engine)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: modelops360-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - PORT=8000
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-modelops}:${POSTGRES_PASSWORD:-modelops_secret}@postgres:5432/${POSTGRES_DB:-modelops360}
+      - ARTIFACT_STORAGE_PATH=/app/artifacts
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=${MLFLOW_EXPERIMENT_NAME:-retail-demand-forecasting}
+      - DRIFT_PSI_THRESHOLD=${DRIFT_PSI_THRESHOLD:-0.20}
+      - DRIFT_KS_PVALUE_THRESHOLD=${DRIFT_KS_PVALUE_THRESHOLD:-0.05}
+    volumes:
+      - modelops_data:/app/data
+      - modelops_artifacts:/app/artifacts
+    depends_on:
+      mlflow:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    networks:
+      - modelops360-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # 3. MLflow Tracking Server
+  # ----------------------------------------------------------------------------
+  mlflow:
+    image: python:3.11-slim
+    container_name: modelops360-mlflow
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "pip install --no-cache-dir mlflow==2.19.0 psycopg[binary]==3.2.3 &&
+             mlflow server
+             --host 0.0.0.0
+             --port 5000
+             --backend-store-uri sqlite:////mlflow/mlflow.db
+             --default-artifact-root /app/artifacts"
+    volumes:
+      - modelops_mlruns:/mlflow
+      - modelops_artifacts:/app/artifacts
+    networks:
+      - modelops360-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ----------------------------------------------------------------------------
+  # 4. PostgreSQL Relational Database (Enterprise State Store)
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: modelops360-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-modelops}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-modelops_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-modelops360}
+    volumes:
+      - modelops_pgdata:/var/lib/postgresql/data
+    networks:
+      - modelops360-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-modelops} -d ${POSTGRES_DB:-modelops360}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+# ------------------------------------------------------------------------------
+# Persistent Named Volumes
+# ------------------------------------------------------------------------------
+volumes:
+  modelops_data:
+    driver: local
+  modelops_artifacts:
+    driver: local
+  modelops_mlruns:
+    driver: local
+  modelops_pgdata:
+    driver: local
+
+# ------------------------------------------------------------------------------
+# Isolated Bridge Network
+# ------------------------------------------------------------------------------
+networks:
+  modelops360-network:
+    driver: bridge

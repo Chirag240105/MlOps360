@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.registry_governance import ModelStage, validate_stage_transition
+from ...services.registry_governance import ModelStage, validate_stage_transition
 
 router = APIRouter(prefix="/models", tags=["model-registry"])
 
