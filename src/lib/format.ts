@@ -15,6 +15,11 @@ export function formatFixed(value: number | null | undefined, decimals = 4): str
   return value.toFixed(decimals);
 }
 
+export function formatPercent(value: number | null | undefined, decimals = 2): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
+  return `${value.toFixed(decimals)}%`;
+}
+
 export function formatDurationMs(ms: number | null | undefined): string {
   if (ms === null || ms === undefined || !Number.isFinite(ms)) return '—';
   if (ms < 1000) return `${Math.round(ms)} ms`;

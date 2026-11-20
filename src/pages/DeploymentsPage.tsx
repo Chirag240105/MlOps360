@@ -25,6 +25,7 @@ import {
   formatAlgorithmLabel,
   formatDateTime,
   formatDurationMs,
+  formatFixed,
   formatNumber,
   jobStatusTone,
   stageTone,
@@ -440,7 +441,7 @@ export function DeploymentsPage({
               selectedModel && selectedModel.versions.length > 0
                 ? selectedModel.versions.map((v) => ({
                     value: v.id,
-                    label: `v${v.versionNumber} (${v.stage} · RMSE ${v.metrics.test.rmse.toFixed(4)})`,
+                    label: `v${v.versionNumber} (${v.stage} · RMSE ${(v.metrics?.test?.rmse ?? 0).toFixed(4)})`,
                   }))
                 : [{value: '', label: 'No versions available'}]
             }
@@ -498,7 +499,7 @@ export function DeploymentsPage({
               onChange={(e) => setRollbackTargetVerId(e.target.value)}
               options={rollbackCandidates.map((v) => ({
                 value: v.id,
-                label: `v${v.versionNumber} (${v.stage} · RMSE ${v.metrics.test.rmse.toFixed(4)})`,
+                label: `v${v.versionNumber} (${v.stage} · RMSE ${(v.metrics?.test?.rmse ?? 0).toFixed(4)})`,
               }))}
             />
           ) : (

@@ -215,7 +215,7 @@ export function OverviewPage({
       pushToast({
         variant: 'success',
         title: 'Retail Demand Lifecycle ready',
-        description: `Trained ${formatAlgorithmLabel(run.algorithm)} (Test RMSE ${run.testMetrics.rmse.toFixed(3)}) and deployed to ${environment}.`,
+        description: `Trained ${formatAlgorithmLabel(run.algorithm)} (Test RMSE ${formatFixed(run.testMetrics?.rmse, 3)}) and deployed to ${environment}.`,
       });
       triggerGlobalRefresh();
       await loadOverview();
@@ -260,8 +260,8 @@ export function OverviewPage({
       .slice(-16)
       .map((run, idx) => ({
         label: `#${idx + 1} ${truncateMiddle(run.mlflowRunId || run.trainingRunId, 5, 4)}`,
-        rmse: Number(run.metrics.test.rmse.toFixed(4)),
-        mae: Number(run.metrics.test.mae.toFixed(4)),
+        rmse: Number((run.metrics?.test?.rmse ?? 0).toFixed(4)),
+        mae: Number((run.metrics?.test?.mae ?? 0).toFixed(4)),
         algorithm: formatAlgorithmLabel(run.algorithm),
       }));
   }, [data]);

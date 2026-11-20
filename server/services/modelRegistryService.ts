@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import type {DatabaseSync} from 'node:sqlite';
 import {ConflictError, NotFoundError, PolicyViolationError, ValidationError} from '../core/errors.ts';
 import type {AuditService} from './auditService.ts';
+import {normalizeMetrics} from './experimentService.ts';
 
 export type ModelStage = 'Development' | 'Candidate' | 'Staging' | 'Production' | 'Archived' | 'Rejected';
 
@@ -540,7 +541,7 @@ export class ModelRegistryService {
       stage: String(v.stage) as ModelStage,
       artifactPath: String(v.artifact_path),
       artifactSha256: String(v.artifact_sha256),
-      metrics: JSON.parse(String(v.metrics_json)),
+      metrics: normalizeMetrics(JSON.parse(String(v.metrics_json))),
       hyperparameters: JSON.parse(String(v.hyperparameters_json)),
       notes: String(v.notes),
       promotedBy: v.promoted_by ? String(v.promoted_by) : null,

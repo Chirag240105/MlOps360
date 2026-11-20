@@ -297,7 +297,7 @@ export function ModelDetailsPage({
             label="Test R² / MAPE"
             value={formatFixed(activeVersion.metrics.test.r2, 4)}
             subtext={
-              activeVersion.metrics.test.mape !== null
+              activeVersion.metrics?.test?.mape != null
                 ? `MAPE ${activeVersion.metrics.test.mape.toFixed(2)}%`
                 : 'MAPE N/A (zero actuals)'
             }

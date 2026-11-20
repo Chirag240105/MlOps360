@@ -40,6 +40,7 @@ import {
   formatDateTime,
   formatDurationMs,
   formatFixed,
+  formatPercent,
   jobStatusTone,
   truncateMiddle,
 } from '../lib/format';
@@ -133,9 +134,9 @@ export function ExperimentsPage({
     () =>
       comparedRuns.map((r) => ({
         run: truncateMiddle(r.mlflowRunId || r.trainingRunId, 6, 4),
-        testRmse: Number(r.metrics.test.rmse.toFixed(4)),
-        testMae: Number(r.metrics.test.mae.toFixed(4)),
-        valRmse: Number(r.metrics.validation.rmse.toFixed(4)),
+        testRmse: Number((r.metrics?.test?.rmse ?? 0).toFixed(4)),
+        testMae: Number((r.metrics?.test?.mae ?? 0).toFixed(4)),
+        valRmse: Number((r.metrics?.validation?.rmse ?? 0).toFixed(4)),
       })),
     [comparedRuns],
   );
@@ -299,13 +300,15 @@ export function ExperimentsPage({
       header: 'MAPE / R²',
       align: 'right',
       sortable: true,
-      sortValue: (row) => row.metrics.test.r2,
-      render: (row) => (
-        <span className="font-mono text-[11px] text-[#9299AA] tabular-nums">
-          {row.metrics.test.mape !== null ? `${row.metrics.test.mape.toFixed(2)}%` : 'N/A'} · R²{' '}
-          {formatFixed(row.metrics.test.r2, 3)}
-        </span>
-      ),
+      sortValue: (row) => row.metrics?.test?.r2 ?? 0,
+      render: (row) => {
+        const mapeVal = row.metrics?.test?.mape ?? (row.metrics?.test as any)?.mapePct;
+        return (
+          <span className="font-mono text-[11px] text-[#9299AA] tabular-nums">
+            {formatPercent(mapeVal, 2)} · R² {formatFixed(row.metrics?.test?.r2, 3)}
+          </span>
+        );
+      },
     },
     {
       key: 'duration',
@@ -551,7 +554,7 @@ export function ExperimentsPage({
         title="Register Model Version"
         description={
           regRun
-            ? `Register ${formatAlgorithmLabel(regRun.algorithm)} (Test RMSE ${regRun.metrics.test.rmse.toFixed(4)}) into the Model Registry.`
+            ? `Register ${formatAlgorithmLabel(regRun.algorithm)} (Test RMSE ${formatFixed(regRun.metrics?.test?.rmse, 4)}) into the Model Registry.`
             : undefined
         }
       >

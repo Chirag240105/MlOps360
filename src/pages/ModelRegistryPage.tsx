@@ -355,7 +355,7 @@ export function ModelRegistryPage({
               runs.length > 0
                 ? runs.map((run) => ({
                     value: run.runId,
-                    label: `${formatAlgorithmLabel(run.algorithm)} · RMSE ${run.testMetrics.rmse.toFixed(4)} (${truncateMiddle(run.runId, 6, 4)})`,
+                    label: `${formatAlgorithmLabel(run.algorithm)} · RMSE ${formatFixed(run.testMetrics?.rmse, 4)} (${truncateMiddle(run.runId, 6, 4)})`,
                   }))
                 : [{value: '', label: 'No completed training runs found'}]
             }

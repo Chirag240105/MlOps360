@@ -7,6 +7,7 @@ import {promisify} from 'node:util';
 import {config} from '../core/config.ts';
 import {NotFoundError, PolicyViolationError, ValidationError} from '../core/errors.ts';
 import type {ExperimentService} from './experimentService.ts';
+import {normalizeMetricBundle} from './experimentService.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -191,8 +192,8 @@ export class TrainingService {
       datasetVersionNumber: r.dataset_version_number,
       algorithm: r.algorithm,
       hyperparameters: JSON.parse(String(r.hyperparameters_json)),
-      validationMetrics: JSON.parse(String(r.validation_metrics_json)),
-      testMetrics: JSON.parse(String(r.test_metrics_json)),
+      validationMetrics: normalizeMetricBundle(JSON.parse(String(r.validation_metrics_json))),
+      testMetrics: normalizeMetricBundle(JSON.parse(String(r.test_metrics_json))),
       artifactSha256: r.artifact_sha256,
       gitCommit: r.git_commit,
       durationMs: r.duration_ms,
@@ -225,8 +226,8 @@ export class TrainingService {
       datasetVersionHash: r.dataset_version_hash,
       algorithm: r.algorithm,
       hyperparameters: JSON.parse(String(r.hyperparameters_json)),
-      validationMetrics: JSON.parse(String(r.validation_metrics_json)),
-      testMetrics: JSON.parse(String(r.test_metrics_json)),
+      validationMetrics: normalizeMetricBundle(JSON.parse(String(r.validation_metrics_json))),
+      testMetrics: normalizeMetricBundle(JSON.parse(String(r.test_metrics_json))),
       candidatesEvaluated: JSON.parse(String(r.candidates_json)),
       splitSummary: JSON.parse(String(r.split_summary_json)),
       artifactPath: r.artifact_path,

@@ -3,6 +3,40 @@ import type {DatabaseSync} from 'node:sqlite';
 import {config} from '../core/config.ts';
 import {NotFoundError, ValidationError} from '../core/errors.ts';
 
+export function normalizeMetricBundle(raw: Record<string, unknown> | null | undefined) {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      mae: 0,
+      rmse: 0,
+      mape: null,
+      smape: null,
+      r2: 0,
+    };
+  }
+  return {
+    mae: raw.mae != null ? Number(raw.mae) : 0,
+    rmse: raw.rmse != null ? Number(raw.rmse) : 0,
+    mape: raw.mapePct != null ? Number(raw.mapePct) : raw.mape != null ? Number(raw.mape) : null,
+    smape: raw.smapePct != null ? Number(raw.smapePct) : raw.smape != null ? Number(raw.smape) : null,
+    r2: raw.r2 != null ? Number(raw.r2) : 0,
+    sampleCount: raw.samples != null ? Number(raw.samples) : undefined,
+    zeroActualCount: raw.zeroActualCount != null ? Number(raw.zeroActualCount) : undefined,
+  };
+}
+
+export function normalizeMetrics(raw: Record<string, unknown> | null | undefined) {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      validation: normalizeMetricBundle({}),
+      test: normalizeMetricBundle({}),
+    };
+  }
+  return {
+    validation: normalizeMetricBundle((raw.validation ?? {}) as Record<string, unknown>),
+    test: normalizeMetricBundle((raw.test ?? {}) as Record<string, unknown>),
+  };
+}
+
 export interface LogExperimentRunInput {
   experimentName?: string;
   trainingRunId: string;
@@ -135,7 +169,7 @@ export class ExperimentService {
       datasetVersionId: r.dataset_version_id,
       algorithm: r.algorithm,
       parameters: JSON.parse(String(r.parameters_json)),
-      metrics: JSON.parse(String(r.metrics_json)),
+      metrics: normalizeMetrics(JSON.parse(String(r.metrics_json))),
       tags: JSON.parse(String(r.tags_json)),
       artifactUri: r.artifact_uri,
       artifactSha256: r.artifact_sha256,

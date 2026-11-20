@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import type {DatabaseSync} from 'node:sqlite';
 import {NotFoundError, PolicyViolationError, ValidationError} from '../core/errors.ts';
 import type {AuditService} from './auditService.ts';
+import {normalizeMetrics} from './experimentService.ts';
 
 export interface CreateDeploymentInput {
   modelId: string;
@@ -143,7 +144,7 @@ export class DeploymentService {
       environment: String(r.environment),
       status: String(r.status),
       trafficPct: Number(r.traffic_pct),
-      metrics: JSON.parse(String(r.metrics_json)),
+      metrics: normalizeMetrics(JSON.parse(String(r.metrics_json))),
       createdBy: String(r.created_by),
       createdAt: String(r.created_at),
       updatedAt: String(r.updated_at),

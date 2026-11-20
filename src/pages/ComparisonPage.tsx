@@ -35,6 +35,7 @@ import {
   formatAlgorithmLabel,
   formatDurationMs,
   formatFixed,
+  formatPercent,
   stageTone,
   truncateMiddle,
 } from '../lib/format';
@@ -160,23 +161,23 @@ export function ComparisonPage({
     return [
       {
         metric: 'Test RMSE',
-        champion: Number(comparison.baseline.metrics.test.rmse.toFixed(4)),
-        challenger: Number(comparison.challenger.metrics.test.rmse.toFixed(4)),
+        champion: Number((comparison.baseline.metrics?.test?.rmse ?? 0).toFixed(4)),
+        challenger: Number((comparison.challenger.metrics?.test?.rmse ?? 0).toFixed(4)),
       },
       {
         metric: 'Val RMSE',
-        champion: Number(comparison.baseline.metrics.validation.rmse.toFixed(4)),
-        challenger: Number(comparison.challenger.metrics.validation.rmse.toFixed(4)),
+        champion: Number((comparison.baseline.metrics?.validation?.rmse ?? 0).toFixed(4)),
+        challenger: Number((comparison.challenger.metrics?.validation?.rmse ?? 0).toFixed(4)),
       },
       {
         metric: 'Test MAE',
-        champion: Number(comparison.baseline.metrics.test.mae.toFixed(4)),
-        challenger: Number(comparison.challenger.metrics.test.mae.toFixed(4)),
+        champion: Number((comparison.baseline.metrics?.test?.mae ?? 0).toFixed(4)),
+        challenger: Number((comparison.challenger.metrics?.test?.mae ?? 0).toFixed(4)),
       },
       {
         metric: 'Val MAE',
-        champion: Number(comparison.baseline.metrics.validation.mae.toFixed(4)),
-        challenger: Number(comparison.challenger.metrics.validation.mae.toFixed(4)),
+        champion: Number((comparison.baseline.metrics?.validation?.mae ?? 0).toFixed(4)),
+        challenger: Number((comparison.challenger.metrics?.validation?.mae ?? 0).toFixed(4)),
       },
     ];
   }, [comparison]);
@@ -258,7 +259,7 @@ export function ComparisonPage({
                 currentModel && currentModel.versions.length > 0
                   ? currentModel.versions.map((v) => ({
                       value: v.id,
-                      label: `v${v.versionNumber} · ${v.stage} (RMSE ${v.metrics.test.rmse.toFixed(4)})`,
+                      label: `v${v.versionNumber} · ${v.stage} (RMSE ${(v.metrics?.test?.rmse ?? 0).toFixed(4)})`,
                     }))
                   : [{value: '', label: 'No versions available'}]
               }
@@ -271,7 +272,7 @@ export function ComparisonPage({
                 currentModel && currentModel.versions.length > 0
                   ? currentModel.versions.map((v) => ({
                       value: v.id,
-                      label: `v${v.versionNumber} · ${v.stage} (RMSE ${v.metrics.test.rmse.toFixed(4)})`,
+                      label: `v${v.versionNumber} · ${v.stage} (RMSE ${(v.metrics?.test?.rmse ?? 0).toFixed(4)})`,
                     }))
                   : [{value: '', label: 'No versions available'}]
               }
@@ -328,7 +329,7 @@ export function ComparisonPage({
                         : 'Challenger Does Not Meet Promotion Criteria'}
                     </h2>
                     <StatusBadge
-                      label={`${comparison.comparison.rmseImprovementPct >= 0 ? '+' : ''}${comparison.comparison.rmseImprovementPct.toFixed(2)}% RMSE`}
+                      label={`${(comparison.comparison.rmseImprovementPct ?? 0) >= 0 ? '+' : ''}${(comparison.comparison.rmseImprovementPct ?? 0).toFixed(2)}% RMSE`}
                       tone={meetsCriteria ? 'success' : 'warning'}
                     />
                   </div>
@@ -339,11 +340,11 @@ export function ComparisonPage({
                     </span>{' '}
                     · ΔRMSE{' '}
                     <span className="font-mono text-[#F3F4F8]">
-                      {comparison.comparison.deltaRmse.toFixed(4)}
+                      {(comparison.comparison.deltaRmse ?? 0).toFixed(4)}
                     </span>{' '}
                     · ΔMAE{' '}
                     <span className="font-mono text-[#F3F4F8]">
-                      {comparison.comparison.deltaMae.toFixed(4)}
+                      {(comparison.comparison.deltaMae ?? 0).toFixed(4)}
                     </span>
                   </p>
                 </div>
@@ -442,14 +443,10 @@ export function ComparisonPage({
                       <tr>
                         <td className="px-4 py-2.5 text-[#9299AA]">Test MAPE</td>
                         <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-                          {comparison.baseline.metrics.test.mape !== null
-                            ? `${comparison.baseline.metrics.test.mape.toFixed(2)}%`
-                            : 'N/A (zeros)'}
+                          {formatPercent(comparison.baseline.metrics?.test?.mape ?? (comparison.baseline.metrics?.test as any)?.mapePct, 2)}
                         </td>
                         <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-                          {comparison.challenger.metrics.test.mape !== null
-                            ? `${comparison.challenger.metrics.test.mape.toFixed(2)}%`
-                            : 'N/A (zeros)'}
+                          {formatPercent(comparison.challenger.metrics?.test?.mape ?? (comparison.challenger.metrics?.test as any)?.mapePct, 2)}
                         </td>
                       </tr>
                       <tr>
